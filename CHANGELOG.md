@@ -10,6 +10,14 @@ All notable changes to this bundle. Versions follow [SemVer](https://semver.org/
   `plugin_manager install_bundle target:github:Shad0wwa1ker/dsh-browser-mode`
   resolves `1.5.1` and enables `preset-browser` and `browser-gate`.
 
+## 1.6.2 — 2026-10-19
+
+- Persist the browser source in `$DSH_PROFILE_DIR/browser-source.json` instead of
+  writing the Loader configuration: reinstalling or managing the bundle rewrites
+  that document and silently dropped the choice back to Edge.
+- A non-default value in the `browser-source` row still wins over the file; delete
+  the file to return to the default.
+
 ## 1.6.1 — 2026-10-19
 
 - Fix `browser_source` when the Loader exposes the row as `include:browser-source`:

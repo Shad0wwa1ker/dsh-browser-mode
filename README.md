@@ -120,7 +120,9 @@ browser_source({ source: "endpoint", endpoint: "http://127.0.0.1:9222" })
 
 ### 手工改配置
 
-`browser-source` 的字段都是 volatile，写进 profile 就会在下次加载时生效，也可以直接在 `cordis.patch.yml` 覆盖：
+切换结果保存在 `$DSH_PROFILE_DIR/browser-source.json`（Windows 上是 `%USERPROFILE%\.dsh\profiles\<profile>\browser-source.json`）。用文件而不是 Loader 配置，是因为重装或管理插件时 Loader 的配置文档会被重写，而这个文件不会。删除它即回到默认（Edge）。
+
+也可以在 profile 的 `cordis.patch.yml` 里覆盖本行——**非默认值优先于上面的文件**，默认值（`edge` / `''` / `''` / `false`）则让文件里的选择生效：
 
 ```yaml
 - id: browser-source

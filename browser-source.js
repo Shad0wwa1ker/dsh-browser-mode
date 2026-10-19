@@ -7,18 +7,22 @@
 //             (no --executable-path, so the provider falls back to it)
 //   endpoint  attach to an already running browser over CDP
 //
-// The fields are declared volatile, so a value written through
-// `settings.update()` lands in the profile's cordis.patch.yml and reaches this
-// plugin through `loader/volatile-update` without a process restart. The
-// provider itself cannot change its launch arguments in place, so this plugin
-// disposes and remounts its provider fiber on every change.
+// The choice is stored in `$DSH_PROFILE_DIR/browser-source.json`, because the
+// Loader's config document is rewritten by plugin reinstall and management while
+// this file survives. A non-default value in the row config (edited by hand) still
+// wins, and the row fields stay volatile so `loader/volatile-update` remounts the
+// provider without a process restart. The provider cannot change its launch
+// arguments in place, so this plugin disposes and remounts its provider fiber on
+// every change.
 //
 // A profile that still carries the standalone `browser-use-playwright-mcp` row
 // from plugin versions <= 1.5.1 already has a provider. Mounting a second one
 // would throw `browser use provider "playwright-mcp" is already registered`, so
 // this plugin then logs a migration hint and leaves that row in charge.
 
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
+import { homedir } from 'node:os'
+import { join } from 'node:path'
 import Schema from '@deepseek-ai/schemastery'
 import * as providerModule from '@deepseek-ai/dsh-experimental-browser-use-playwright-mcp'
 
@@ -28,6 +32,8 @@ export const inject = ['browserUse', 'tools']
 
 const ACCESS_TOOL = 'browser_source'
 const DEFAULT_ENDPOINT = ''
+const DEFAULTS = { source: 'edge', endpoint: DEFAULT_ENDPOINT, executablePath: '', headless: false }
+const SOURCES = new Set(['edge', 'builtin', 'endpoint'])
 
 const EDGE_PATHS = {
   win32: [
@@ -67,9 +73,54 @@ function resolveSource(config) {
   return { source, endpoint, executablePath, headless }
 }
 
+/**
+ * Where the last explicit choice is kept. The Loader's own config document can be
+ * rewritten (or replaced wholesale) by plugin reinstall and management, so the
+ * plugin treats this small JSON file as the source of truth and the row config as
+ * the fallback/default.
+ */
+function statePath() {
+  const dir = process.env.DSH_PROFILE_DIR
+    ?? join(homedir(), '.dsh', 'profiles', process.env.DSH_PROFILE ?? 'desktop')
+  return join(dir, 'browser-source.json')
+}
+
+function readState() {
+  try {
+    const value = JSON.parse(readFileSync(statePath(), 'utf8'))
+    return value !== null && typeof value === 'object' ? value : {}
+  } catch {
+    return {}
+  }
+}
+
+function writeState(values) {
+  const file = statePath()
+  const temporary = `${file}.tmp`
+  writeFileSync(temporary, `${JSON.stringify(values, null, 2)}\n`, 'utf8')
+  renameSync(temporary, file)
+}
+
+/** A config value different from its default is an explicit choice and wins. */
+function effective(config) {
+  const fromConfig = resolveSource(config)
+  const saved = readState()
+  const result = { ...DEFAULTS }
+  for (const key of Object.keys(DEFAULTS)) {
+    const configured = fromConfig[key]
+    const candidate = configured === DEFAULTS[key] ? saved[key] : configured
+    const valid = key === 'source'
+      ? SOURCES.has(candidate)
+      : key === 'headless'
+        ? typeof candidate === 'boolean'
+        : typeof candidate === 'string'
+    result[key] = valid ? candidate : DEFAULTS[key]
+  }
+  return result
+}
+
 /** Provider configuration for the selected source. */
-function providerConfig(config) {
-  const { source, endpoint, executablePath, headless } = resolveSource(config)
+function providerConfig({ source, endpoint, executablePath, headless }) {
   if (source === 'endpoint') {
     if (!endpoint) throw new Error('source=endpoint 需要填写 CDP 地址（例如 http://127.0.0.1:9222）')
     return { mode: 'attach', endpoint }
@@ -83,7 +134,7 @@ function providerConfig(config) {
 
 /** One-line human description of the effective source. */
 function describeSource(config) {
-  return describeResolved(resolveSource(config))
+  return describeResolved(effective(config))
 }
 
 /** Same description, from already-resolved plain values. */
@@ -118,14 +169,15 @@ export function apply(ctx, config) {
         return
       }
       let options
+      const values = effective(config)
       try {
-        options = providerConfig(config)
+        options = providerConfig(values)
       } catch (error) {
         console.error('[browser-source]', String(error?.message ?? error))
         return
       }
       fiber = ctx.plugin(providerPlugin, options)
-      console.log('[browser-source]', `browser source: ${describeSource(config)}`)
+      console.log('[browser-source]', `browser source: ${describeResolved(values)}`)
     })
     return queue
   }
@@ -166,7 +218,7 @@ export function apply(ctx, config) {
       render: (_args, value) => [{ type: 'text', text: typeof value === 'string' ? value : JSON.stringify(value) }],
     },
     async execute(args, exec) {
-      const current = resolveSource(config)
+      const current = effective(config)
       const changed = ['source', 'endpoint', 'executablePath', 'headless'].filter((key) => args?.[key] !== undefined)
       if (changed.length === 0) {
         return [
@@ -178,30 +230,20 @@ export function apply(ctx, config) {
           '切换示例：browser_source({ source: "builtin" })、browser_source({ source: "endpoint", endpoint: "http://127.0.0.1:9222" })。',
         ].join('\n')
       }
-      if (args.source === 'endpoint' && !(args.endpoint ?? current.endpoint).trim()) {
+      const next = { ...current }
+      for (const key of changed) next[key] = args[key]
+      if (next.source === 'endpoint' && !next.endpoint.trim()) {
         return '没有改成远程浏览器：source=endpoint 需要 CDP 地址，请让用户提供（例如 Edge 用 --remote-debugging-port=9222 启动后的 http://127.0.0.1:9222）。'
       }
-      const settings = ctx.get('settings')
-      if (settings === undefined) {
-        return '无法保存：当前组合没有 settings 服务。请在 profile 的 cordis.patch.yml 里手动修改 browser-source 行的 config（source / endpoint / executablePath / headless），然后重载插件。'
+      if (!SOURCES.has(next.source)) {
+        return `没有保存：source 只能是 ${[...SOURCES].join(' / ')}。`
       }
-      const entryId = ctx.fiber.entry?.options.id ?? 'browser-source'
-      // The Loader can expose the row either as the declared id or as the
-      // composed entry id (`include:<id>`), so accept any of those spellings.
-      const form = settings
-        .describe()
-        .find((row) => row.ns === entryId || row.ns === `include:${entryId}` || row.ns.endsWith(`:${entryId}`))
-      if (form === undefined) {
-        return `无法保存：插件行 ${entryId} 没有可写配置（可能被更高优先级的配置覆盖）。请手动改 profile 的 cordis.patch.yml。`
-      }
-      const patch = {}
-      for (const key of changed) patch[key] = args[key]
       try {
-        await settings.update(form.ns, patch, form.revision)
+        writeState(next)
       } catch (error) {
-        return `保存失败：${String(error?.message ?? error)}`
+        return `保存失败：${String(error?.message ?? error)}（配置文件：${statePath()}）`
       }
-      const next = { ...current, ...patch }
+      await remount()
       return `已切换浏览器来源为 ${describeResolved(next)}（配置：${JSON.stringify(next)}）。已打开的会话需要重新调用浏览器工具生效。`
     },
   })
