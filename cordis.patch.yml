@@ -1,19 +1,21 @@
 # Browser-operation mode for this profile.
 #
-# This bundle contributes two independent pieces:
+# This bundle contributes three independent pieces:
 #
 #   * `preset-browser` — the `browser` Agent preset (persona + toolset). It does
 #     NOT mount a Playwright MCP provider: a preset-scoped provider cannot attach
-#     to Sessions in this build (its `agent/created` hook never fires there), so
-#     the provider stays in the profile composition.
-#   * `browser-gate` — narrows that profile provider back down to this mode. It
-#     refuses any browser tool call outside the `browser` preset until the user
-#     approves that Session through the `browser_access` tool.
+#     to Sessions in this build (its `agent/created` hook never fires there).
+#   * `browser-source` — mounts the Playwright MCP provider itself so the browser
+#     source can be switched at runtime: Edge (default), Playwright's bundled
+#     Chromium, or an already running browser over CDP.
+#   * `browser-gate` — refuses any browser tool call outside the `browser` preset
+#     until the user approves that Session through the `browser_access` tool.
 #
-# The profile rows `browser-use` and `browser-use-playwright-mcp`
-# (in $DSH_PROFILE_DIR/cordis.patch.yml) MUST stay enabled; they are the only
-# working provider mount. `browser-gate` is what keeps them inert everywhere
-# else.
+# The profile row `browser-use` (in $DSH_PROFILE_DIR/cordis.patch.yml) MUST stay
+# enabled: it is the shared `browserUse` registry every provider registers into.
+# The old `browser-use-playwright-mcp` row must be REMOVED when upgrading from
+# 1.5.1 or earlier — two providers cannot register at once; `browser-source`
+# logs a migration hint and stays passive while that row exists.
 - insert:
     - id: preset-browser
       name: '@deepseek-ai/dsh-agent-preset'
@@ -102,3 +104,14 @@
     # Profile-scope gate: browser tools work in the `browser` preset only.
     - id: browser-gate
       name: '@local/dsh-browser-mode/browser-gate'
+    # Profile-scope browser provider: owns the launch configuration so the
+    # browser source can be switched without restarting DSH. Configure it with
+    # the `browser_source` tool (or a `config:` override in your own profile
+    # patch): source=edge | builtin | endpoint.
+    - id: browser-source
+      name: '@local/dsh-browser-mode/browser-source'
+      config:
+        source: edge
+        endpoint: ''
+        executablePath: ''
+        headless: false

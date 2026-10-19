@@ -10,6 +10,22 @@ All notable changes to this bundle. Versions follow [SemVer](https://semver.org/
   `plugin_manager install_bundle target:github:Shad0wwa1ker/dsh-browser-mode`
   resolves `1.5.1` and enables `preset-browser` and `browser-gate`.
 
+## 1.6.0 — 2026-10-19
+
+- Add `browser-source`: the bundle now mounts the Playwright MCP provider itself,
+  so the browser source can be switched at runtime without restarting DSH —
+  `edge` (default), `builtin` (Playwright's Chromium), or `endpoint` (attach to a
+  running browser over CDP).
+- Add the `browser_source` tool: reports the current source; with arguments it
+  writes the volatile `browser-source` config through `settings.update()` and
+  remounts the provider on `loader/volatile-update`.
+- **Migration**: the profile's `browser-use-playwright-mcp` row must be removed
+  (keep `browser-use`). While it exists, `browser-source` logs a hint and stays
+  passive so the old provider keeps working.
+- READMEs: new "Browser source" section, CDP launch example, updated checks and
+  troubleshooting, and an explicit note that a version bump plus a push is what
+  the plugin market's update check sees.
+
 ## 1.5.1 — 2026-10-19
 
 - Fix `browser_access` failing with `content.some is not a function`: a tool's
