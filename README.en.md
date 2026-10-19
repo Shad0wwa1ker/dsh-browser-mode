@@ -2,6 +2,10 @@
 
 [中文](README.md) | English
 
+[![Release](https://img.shields.io/github/v/release/Shad0wwa1ker/dsh-browser-mode?color=4c8bf5)](https://github.com/Shad0wwa1ker/dsh-browser-mode/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2ea44f)](LICENSE)
+[![DSH](https://img.shields.io/badge/DeepSeek%20Harness-0.2.1--rc.2-6f42c1)](https://github.com/deepseek-ai)
+
 A [DeepSeek Harness](https://github.com/deepseek-ai) (DSH) bundle that adds a **Browser mode** and keeps the browser on a leash everywhere else: no Session opens a browser until you say so.
 
 Two parts, shipped together:
