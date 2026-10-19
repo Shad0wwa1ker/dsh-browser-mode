@@ -88,27 +88,38 @@ function statePath() {
 function readState() {
   try {
     const value = JSON.parse(readFileSync(statePath(), 'utf8'))
-    return value !== null && typeof value === 'object' ? value : {}
+    if (value === null || typeof value !== 'object') return { values: {}, config: null }
+    if (value.config !== null && typeof value.config === 'object') {
+      return { values: value, config: value.config }
+    }
+    // A file written before the snapshot existed carried only the values.
+    return { values: value, config: null }
   } catch {
-    return {}
+    return { values: {}, config: null }
   }
 }
 
-function writeState(values) {
+function writeState(values, config) {
   const file = statePath()
   const temporary = `${file}.tmp`
-  writeFileSync(temporary, `${JSON.stringify(values, null, 2)}\n`, 'utf8')
+  const payload = { ...values, config: resolveSource(config) }
+  writeFileSync(temporary, `${JSON.stringify(payload, null, 2)}\n`, 'utf8')
   renameSync(temporary, file)
 }
 
-/** A config value different from its default is an explicit choice and wins. */
+/**
+ * The row config is the snapshot the file was written against. When it still
+ * matches, the stored choice wins; when the user edited it by hand, the edited
+ * keys win — and are recorded as the new snapshot by the next write.
+ */
 function effective(config) {
   const fromConfig = resolveSource(config)
-  const saved = readState()
+  const { values: saved, config: snapshot } = readState()
   const result = { ...DEFAULTS }
   for (const key of Object.keys(DEFAULTS)) {
     const configured = fromConfig[key]
-    const candidate = configured === DEFAULTS[key] ? saved[key] : configured
+    const edited = snapshot !== null && JSON.stringify(configured) !== JSON.stringify(snapshot[key])
+    const candidate = edited ? configured : saved[key] ?? configured
     const valid = key === 'source'
       ? SOURCES.has(candidate)
       : key === 'headless'
@@ -239,7 +250,7 @@ export function apply(ctx, config) {
         return `没有保存：source 只能是 ${[...SOURCES].join(' / ')}。`
       }
       try {
-        writeState(next)
+        writeState(next, config)
       } catch (error) {
         return `保存失败：${String(error?.message ?? error)}（配置文件：${statePath()}）`
       }

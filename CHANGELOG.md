@@ -10,6 +10,12 @@ All notable changes to this bundle. Versions follow [SemVer](https://semver.org/
   `plugin_manager install_bundle target:github:Shad0wwa1ker/dsh-browser-mode`
   resolves `1.5.1` and enables `preset-browser` and `browser-gate`.
 
+## 1.6.3 — 2026-10-19
+
+- A source chosen with `browser_source` now beats a hand-edited row config: the
+  state file records the row values it was written against, and only keys edited
+  afterwards count as manual overrides.
+
 ## 1.6.2 — 2026-10-19
 
 - Persist the browser source in `$DSH_PROFILE_DIR/browser-source.json` instead of

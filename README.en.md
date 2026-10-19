@@ -122,7 +122,7 @@ With no arguments it only reports the current configuration. A switch remounts t
 
 The choice is stored in `$DSH_PROFILE_DIR/browser-source.json` (on Windows `%USERPROFILE%\.dsh\profiles\<profile>\browser-source.json`). It is a plain file rather than Loader configuration because reinstalling or managing plugins rewrites the Loader's document while this file survives. Delete it to return to the default (Edge).
 
-You can also override the row in the profile's `cordis.patch.yml` — a **non-default value wins over the file**, while defaults (`edge` / `''` / `''` / `false`) let the stored choice apply:
+You can also override the row in the profile's `cordis.patch.yml`: the file records a snapshot of the row it was written against, so **keys you edited afterwards win**, while keys you did not touch keep the stored choice (a `browser_source` switch refreshes the snapshot).
 
 ```yaml
 - id: browser-source

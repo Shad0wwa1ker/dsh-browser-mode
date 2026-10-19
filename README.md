@@ -122,7 +122,7 @@ browser_source({ source: "endpoint", endpoint: "http://127.0.0.1:9222" })
 
 切换结果保存在 `$DSH_PROFILE_DIR/browser-source.json`（Windows 上是 `%USERPROFILE%\.dsh\profiles\<profile>\browser-source.json`）。用文件而不是 Loader 配置，是因为重装或管理插件时 Loader 的配置文档会被重写，而这个文件不会。删除它即回到默认（Edge）。
 
-也可以在 profile 的 `cordis.patch.yml` 里覆盖本行——**非默认值优先于上面的文件**，默认值（`edge` / `''` / `''` / `false`）则让文件里的选择生效：
+也可以在 profile 的 `cordis.patch.yml` 里覆盖本行：文件里记录着写入时的行配置快照，**你事后手改过的字段优先**，没改过的字段继续用文件里的选择（用 `browser_source` 切换会刷新快照）。
 
 ```yaml
 - id: browser-source
