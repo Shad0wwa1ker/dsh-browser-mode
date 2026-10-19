@@ -10,6 +10,14 @@ All notable changes to this bundle. Versions follow [SemVer](https://semver.org/
   `plugin_manager install_bundle target:github:Shad0wwa1ker/dsh-browser-mode`
   resolves `1.5.1` and enables `preset-browser` and `browser-gate`.
 
+## 1.6.1 — 2026-10-19
+
+- Fix `browser_source` when the Loader exposes the row as `include:browser-source`:
+  accept the declared id, the composed `include:` id, or any `…:id` suffix when
+  locating the settings namespace, and write through the namespace it found.
+- The browser preset persona now tells the model to switch sources with
+  `browser_source` (Edge / builtin / CDP endpoint) instead of editing YAML.
+
 ## 1.6.0 — 2026-10-19
 
 - Add `browser-source`: the bundle now mounts the Playwright MCP provider itself,
