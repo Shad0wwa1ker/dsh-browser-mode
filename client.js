@@ -1,5 +1,5 @@
 window.__ModuleLoader__.load({
-  id: 'dsh-browser-mode',
+  id: '@local/dsh-browser-mode',
   factory(require) {
     const React = require('react');
     const h = React.createElement;
