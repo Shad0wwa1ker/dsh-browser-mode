@@ -2,6 +2,16 @@
 
 All notable changes to this bundle. Versions follow [SemVer](https://semver.org/).
 
+## 1.7.1 — 2026-10-19
+
+- Fix the settings page never appearing. `dsh-client-modules` composes a package's
+  client bundle only from a loader row whose `options.name` is the exact package
+  specifier; the previous rows all imported subpaths
+  (`@local/dsh-browser-mode/browser-gate`, `.../browser-source`), so the client
+  half was silently skipped. Add a no-op carrier row that imports the bare name.
+- `exports["."]` now points at `index.js` (the no-op carrier) instead of
+  `browser-gate.js`; the gate keeps its own `./browser-gate` subpath row.
+
 ## 1.7.0 — 2026-10-19
 
 - Add a settings page to the bundle in the plugins view: pick Edge (default),
