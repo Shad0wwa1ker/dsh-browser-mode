@@ -186,14 +186,18 @@ export function apply(ctx, config) {
         return '无法保存：当前组合没有 settings 服务。请在 profile 的 cordis.patch.yml 里手动修改 browser-source 行的 config（source / endpoint / executablePath / headless），然后重载插件。'
       }
       const entryId = ctx.fiber.entry?.options.id ?? 'browser-source'
-      const form = settings.describe().find((row) => row.ns === entryId)
+      // The Loader can expose the row either as the declared id or as the
+      // composed entry id (`include:<id>`), so accept any of those spellings.
+      const form = settings
+        .describe()
+        .find((row) => row.ns === entryId || row.ns === `include:${entryId}` || row.ns.endsWith(`:${entryId}`))
       if (form === undefined) {
         return `无法保存：插件行 ${entryId} 没有可写配置（可能被更高优先级的配置覆盖）。请手动改 profile 的 cordis.patch.yml。`
       }
       const patch = {}
       for (const key of changed) patch[key] = args[key]
       try {
-        await settings.update(entryId, patch, form.revision)
+        await settings.update(form.ns, patch, form.revision)
       } catch (error) {
         return `保存失败：${String(error?.message ?? error)}`
       }
