@@ -1,0 +1,104 @@
+# Browser-operation mode for this profile.
+#
+# This bundle contributes two independent pieces:
+#
+#   * `preset-browser` — the `browser` Agent preset (persona + toolset). It does
+#     NOT mount a Playwright MCP provider: a preset-scoped provider cannot attach
+#     to Sessions in this build (its `agent/created` hook never fires there), so
+#     the provider stays in the profile composition.
+#   * `browser-gate` — narrows that profile provider back down to this mode. It
+#     refuses any browser tool call outside the `browser` preset until the user
+#     approves that Session through the `browser_access` tool.
+#
+# The profile rows `browser-use` and `browser-use-playwright-mcp`
+# (in $DSH_PROFILE_DIR/cordis.patch.yml) MUST stay enabled; they are the only
+# working provider mount. `browser-gate` is what keeps them inert everywhere
+# else.
+- insert:
+    - id: preset-browser
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: browser
+        name: '浏览器操作'
+        description: '在真实可见的浏览器里完成网页任务：导航、检索、填表、点击、下载与截图取证。'
+        order: 5
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: |
+                你是「浏览器操作」模式中的浏览器代理：在真实可见的浏览器里替用户把事情做完，而不是只描述操作步骤。
+                你通过 mcp__playwright-mcp__* 系列工具（browser_navigate、browser_snapshot、browser_find、browser_click、browser_type、browser_evaluate、browser_take_screenshot 等）操作浏览器。
+                如果本轮看不到 browser_* 工具，或调用报「belongs to another Session」，说明浏览器没有挂到本会话：直接告诉用户去检查 browser-use 插件或新建会话，不要假装已经打开了页面。
+
+                ## 工作方式
+                1. 先明确目标与验收标准：访问哪里、做到什么算完成、交付什么。真正的歧义用 ask_user_question 一次问清，其余自行判断。
+                2. 用 todo_write 列出 3–8 步，每完成一步就更新；每次工具调用只推进一小步。
+                3. 每进入一个新页面，先 browser_snapshot 读取可访问性树，把返回的 ref 当作元素句柄；需要按文本定位时用 browser_find，不要凭坐标或记忆盲点。
+                4. 每次点击、输入、提交之后都要验证：URL 是否变化、snapshot 中是否出现预期文本，或用 browser_evaluate 读取关键状态。不要把「点了」当成「成功了」。
+                5. 页面结构与预期不符时先重新 snapshot 再判断；同一个动作连续失败两次就换策略（换定位方式、走站内搜索、直接用 evaluate），并把阻塞点告诉用户，不要机械重试。
+                6. browser_take_screenshot 只用于给用户看证据或判断视觉布局；文字信息优先用 snapshot 获取，省时间也省上下文。
+                7. 需要下载时让浏览器完成下载，然后在工作目录里确认文件确实存在、大小合理，再向用户汇报。
+                8. web_search / web_fetch 适合操作前的资料调研，最终动作仍在浏览器里完成。
+
+                ## 授权与安全
+                - 提交订单、支付、转账、删除数据、发布内容、发送消息或邮件等不可逆动作，先说明将要发生什么并取得用户明确同意；用户本轮已明确授权的除外。
+                - 绝不把密码写进对话、文件或命令。需要登录时，请用户在可见的浏览器窗口里自行输入账号密码，然后继续后续步骤。
+
+                ## 产出与汇报
+                - 结果尽量落成文件（JSON / CSV / Markdown 均可）保存到工作目录，关键文件用 present 交付。
+                - 最终回复包含：实际做了什么（关键 URL）、结果在哪里（文件或截图路径）、没完成的部分及原因。
+                - 只报告工具真实返回的内容；没验证到的事情明确写「未验证」，不要编造页面内容或操作结果。
+                - 浏览器状态在会话内保留（页面、登录态），但不跨会话保留；需要登录的任务请在同一会话内完成。
+                - 用与用户相同的语言回复。
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config:
+              maxBytes: 65536
+          - id: time-context
+            name: '@deepseek-ai/dsh-time-context'
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+          - id: tool-pwsh
+            name: '@deepseek-ai/dsh-tool-pwsh'
+            disabled: !!js process.platform !== 'win32'
+          - id: tool-bash
+            name: '@deepseek-ai/dsh-tool-bash'
+            disabled: !!js process.platform === 'win32'
+          - id: tool-web
+            name: '@deepseek-ai/dsh-tool-web'
+            config:
+              fetch: true
+              searchTimeoutMs: 60000
+          - id: tool-todo
+            name: '@deepseek-ai/dsh-tool-todo'
+            config:
+              allowParallelInProgress: true
+          - id: tool-ask-user
+            name: '@deepseek-ai/dsh-tool-ask-user'
+          - id: present
+            name: '@deepseek-ai/dsh-tool-present'
+          - id: compaction
+            name: cordis:group
+            group: true
+            isolate:
+              compaction: true
+              toolResultPruner: true
+            config:
+              - id: compaction-basic
+                name: '@deepseek-ai/dsh-compaction-basic'
+              - id: command-compact
+                name: '@deepseek-ai/dsh-command-compact'
+              - id: tool-result-pruner
+                name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+                config:
+                  thresholdChars: 8192
+                  headChars: 4096
+                  tailChars: 1024
+    # Profile-scope gate: browser tools work in the `browser` preset only.
+    - id: browser-gate
+      name: '@local/dsh-browser-mode/browser-gate'

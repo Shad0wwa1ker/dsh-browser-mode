@@ -1,0 +1,41 @@
+{
+  "name": "@local/dsh-browser-mode",
+  "version": "1.5.1",
+  "private": true,
+  "type": "module",
+  "description": "A DeepSeek Harness bundle: a visible-browser Agent preset plus a gate that keeps browser tools out of every other Session until the user agrees.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Shad0wwa1ker/dsh-browser-mode.git"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh-plugin",
+    "dsh-bundle",
+    "browser",
+    "playwright",
+    "agent-preset"
+  ],
+  "exports": {
+    ".": "./browser-gate.js",
+    "./browser-gate": "./browser-gate.js"
+  },
+  "files": [
+    "browser-gate.js",
+    "cordis.patch.yml",
+    "README.md",
+    "README.en.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "dependencies": {
+    "@deepseek-ai/dsh-browser-use": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-experimental-browser-use-playwright-mcp": "0.2.1-rc.2"
+  }
+}
