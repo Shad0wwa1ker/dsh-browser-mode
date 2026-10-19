@@ -52,9 +52,12 @@ pnpm add @deepseek-ai/dsh-browser-use@0.2.1-rc.2 @deepseek-ai/dsh-experimental-b
 From GitHub (same pattern as `@local/dsh-balance-pill`, a pnpm git dependency):
 
 ```powershell
-# run in the profile directory
-pnpm add "@local/dsh-browser-mode@github:Shad0wwa1ker/dsh-browser-mode"
+# run in the profile directory (pnpm must be able to find git)
+pnpm add "github:Shad0wwa1ker/dsh-browser-mode"
 ```
+
+The repo's `name` is `@local/dsh-browser-mode`, so the dependency lands as
+`"@local/dsh-browser-mode": "github:Shad0wwa1ker/dsh-browser-mode"`.
 
 Then add it to the profile's bundle list, `dsh.profile.bundles` in `package.json`:
 

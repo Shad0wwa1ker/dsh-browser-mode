@@ -52,9 +52,12 @@ pnpm add @deepseek-ai/dsh-browser-use@0.2.1-rc.2 @deepseek-ai/dsh-experimental-b
 从 GitHub 装（推荐，和 `@local/dsh-balance-pill` 一样走 pnpm 的 git 依赖）：
 
 ```powershell
-# 在 profile 目录执行
-pnpm add "@local/dsh-browser-mode@github:Shad0wwa1ker/dsh-browser-mode"
+# 在 profile 目录执行（pnpm 需要能找到 git）
+pnpm add "github:Shad0wwa1ker/dsh-browser-mode"
 ```
+
+仓库里的 `name` 就是 `@local/dsh-browser-mode`，装好后依赖会显示为
+`"@local/dsh-browser-mode": "github:Shad0wwa1ker/dsh-browser-mode"`。
 
 然后把它加进 profile 的 bundle 列表，即 `package.json` 的 `dsh.profile.bundles`：
 
