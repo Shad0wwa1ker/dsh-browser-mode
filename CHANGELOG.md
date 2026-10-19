@@ -2,6 +2,15 @@
 
 All notable changes to this bundle. Versions follow [SemVer](https://semver.org/).
 
+## 1.7.0 — 2026-10-19
+
+- Add a settings page to the bundle in the plugins view: pick Edge (default),
+  the Chromium bundled with Playwright, or an existing browser over CDP, plus an
+  optional executable override and a headless switch.
+- The page talks to the host through `GET`/`POST /dsh-browser-mode/api/source`,
+  mounted by the `browser-source` plugin; writes go through the same state file
+  and remount as the `browser_source` tool, so both stay in sync.
+
 ## Unreleased
 
 - Docs: rewrite both READMEs — one-paste install, one-time provider setup with

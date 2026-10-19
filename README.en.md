@@ -107,6 +107,10 @@ Edge is the default. Three sources:
 | `builtin` | launches Playwright's own Chromium (`~/AppData/Local/ms-playwright/chromium-*`) |
 | `endpoint` | attaches to a browser already started with a debugging port (`--cdp-endpoint`); this mode is exclusive, one Session at a time |
 
+### Set it on the plugin page
+
+The settings page on this bundle's card in the Plugins view picks the source, fills the CDP endpoint, overrides the Edge path and toggles headless; saving takes effect immediately (and, like the tool, invalidates the browser tools of sessions that are already open). That page and the `browser_source` tool read and write the same configuration, so the two can be mixed.
+
 ### Ask the model to switch
 
 In any Session say "use the built-in browser" or "connect to my running browser"; the model calls `browser_source`:

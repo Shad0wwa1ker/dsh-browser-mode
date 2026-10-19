@@ -107,6 +107,10 @@ plugin_manager list_plugins
 | `builtin` | 启动 Playwright 自带的 Chromium（`~/AppData/Local/ms-playwright/chromium-*`） |
 | `endpoint` | 连接一个已经启动、开了调试端口的浏览器（`--cdp-endpoint`），此时独占，多会话不能共用 |
 
+### 在插件页面设置
+
+「插件」页里本插件卡片上的设置页可以直接选来源、填 CDP 地址、改 Edge 路径、切换无头，保存后立即生效（和工具一样，已打开会话的浏览器工具会失效）。这个页面与 `browser_source` 工具读写同一份配置，两种方式可以混用。
+
 ### 让模型切换
 
 在任意会话里说「换成内置浏览器」「连接我开着的浏览器」，模型会调用 `browser_source`：

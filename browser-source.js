@@ -262,4 +262,103 @@ export async function apply(ctx, config) {
       return `已切换浏览器来源为 ${describeResolved(next)}（配置：${JSON.stringify(next)}）。请新开一个「浏览器操作」会话再打开页面：已打开会话里的浏览器工具会随着旧浏览器一起失效。`
     },
   })
+
+  // Plugins page → this bundle → settings form (client.js) talks to these routes.
+  // The form must never be able to write outside the same three fields the tool owns.
+  const SETTINGS_PATH = '/dsh-browser-mode/api/source'
+
+  const snapshot = () => {
+    const values = effective(config)
+    return { ...values, description: describeResolved(values) }
+  }
+
+  const sendJson = (response, status, body) => {
+    response.writeHead(status, {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
+    })
+    response.end(JSON.stringify(body))
+  }
+
+  const readBody = (request) =>
+    new Promise((resolve, reject) => {
+      let text = ''
+      request.setEncoding('utf8')
+      request.on('data', (chunk) => {
+        text += chunk
+        if (text.length > 64 * 1024) {
+          reject(new Error('请求体过大'))
+          request.destroy()
+        }
+      })
+      request.on('end', () => {
+        try {
+          resolve(text === '' ? {} : JSON.parse(text))
+        } catch {
+          reject(new Error('请求体不是合法 JSON'))
+        }
+      })
+      request.on('error', reject)
+    })
+
+  const sameOrigin = (request) => {
+    const origin = request.headers.origin
+    if (origin === undefined) return true
+    try {
+      return new URL(origin).host === request.headers.host
+    } catch {
+      return false
+    }
+  }
+
+  ctx.inject(['webServer'], (webCtx) => {
+    const webServer = webCtx.webServer
+    if (webServer?.register === undefined) return
+    ctx.effect(
+      () =>
+        webServer.register({
+          kind: 'exact',
+          path: SETTINGS_PATH,
+          handler: (request, response) => {
+            void (async () => {
+              if (!sameOrigin(request)) {
+                sendJson(response, 403, { error: '跨站请求被拒绝' })
+                return
+              }
+              if (request.method === 'GET' || request.method === 'HEAD') {
+                sendJson(response, 200, snapshot())
+                return
+              }
+              if (request.method !== 'POST') {
+                response.writeHead(405, { allow: 'GET, POST' })
+                response.end()
+                return
+              }
+              try {
+                const body = await readBody(request)
+                const next = { ...effective(config) }
+                for (const key of ['source', 'endpoint', 'executablePath', 'headless']) {
+                  if (body[key] === undefined) continue
+                  next[key] = key === 'headless' ? body[key] === true : String(body[key])
+                }
+                if (!SOURCES.has(next.source)) {
+                  sendJson(response, 400, { error: `来源只能是 ${[...SOURCES].join(' / ')}` })
+                  return
+                }
+                if (next.source === 'endpoint' && next.endpoint.trim() === '') {
+                  sendJson(response, 400, { error: '连接已有浏览器需要 CDP 地址' })
+                  return
+                }
+                writeState(next, config)
+                await remount()
+                sendJson(response, 200, snapshot())
+              } catch (error) {
+                sendJson(response, 400, { error: String(error?.message ?? error) })
+              }
+            })()
+          },
+        }),
+      'browser-mode: settings route',
+    )
+  })
 }

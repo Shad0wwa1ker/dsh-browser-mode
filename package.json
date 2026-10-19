@@ -1,9 +1,9 @@
 {
   "name": "@local/dsh-browser-mode",
-  "version": "1.6.4",
+  "version": "1.7.0",
   "private": true,
   "type": "module",
-  "description": "A DeepSeek Harness bundle: a visible-browser Agent preset, a runtime-switchable browser source (Edge / bundled Chromium / CDP endpoint), and a gate that keeps browser tools out of every other Session until the user agrees.",
+  "description": "A DeepSeek Harness bundle: a visible-browser Agent preset, a runtime-switchable browser source (Edge / bundled Chromium / CDP endpoint) with a settings page in the plugins view, and a gate that keeps browser tools out of every other Session until the user agrees.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -20,11 +20,13 @@
   "exports": {
     ".": "./browser-gate.js",
     "./browser-gate": "./browser-gate.js",
-    "./browser-source": "./browser-source.js"
+    "./browser-source": "./browser-source.js",
+    "./client": "./client.js"
   },
   "files": [
     "browser-gate.js",
     "browser-source.js",
+    "client.js",
     "cordis.patch.yml",
     "README.md",
     "README.en.md",
@@ -34,6 +36,13 @@
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-locale"
+      ]
     }
   },
   "dependencies": {
