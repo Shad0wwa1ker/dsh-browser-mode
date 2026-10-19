@@ -52,6 +52,21 @@ Both providers must sit in the **profile** layer. Add them to `$DSH_PROFILE_DIR/
 
 **Why the bundle cannot do this itself**: a row inserted by a bundle is registered for real in the profile composition, so a second `browserUse` service is a duplicate-registration error at load time. DSH's bundle syntax has no "insert only if absent" form, so this stays a documented step rather than part of `cordis.patch.yml`.
 
+### Updating to a newer version
+
+Run this in the profile directory, then reload the bundle:
+
+```powershell
+pnpm add "github:Shad0wwa1ker/dsh-browser-mode"
+```
+
+```
+plugin_manager set_bundle enabled:false target:@local/dsh-browser-mode
+plugin_manager set_bundle enabled:true  target:@local/dsh-browser-mode
+```
+
+`pnpm` re-resolves the GitHub dependency to the latest commit on the default branch.
+
 ### Check the result
 
 ```

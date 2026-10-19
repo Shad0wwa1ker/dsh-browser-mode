@@ -52,6 +52,21 @@ plugin_manager install_bundle target:github:Shad0wwa1ker/dsh-browser-mode
 
 **为什么这一步不能由插件包代劳**：插件包在 profile 组合里插入的行会真实再注册一次 `browserUse` 服务。如果用户已经有一份，就会在加载时报重复注册；DSH 的 bundle 语法没有「不存在才插入」的条件写法。因此它只作为文档步骤保留，不放进 `cordis.patch.yml`。
 
+### 更新到新版本
+
+在 profile 目录执行，然后重载 bundle：
+
+```powershell
+pnpm add "github:Shad0wwa1ker/dsh-browser-mode"
+```
+
+```
+plugin_manager set_bundle enabled:false target:@local/dsh-browser-mode
+plugin_manager set_bundle enabled:true  target:@local/dsh-browser-mode
+```
+
+`pnpm` 会把该 GitHub 依赖重新解析到默认分支的最新提交。
+
 ### 确认安装结果
 
 ```
