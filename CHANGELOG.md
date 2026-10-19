@@ -2,6 +2,14 @@
 
 All notable changes to this bundle. Versions follow [SemVer](https://semver.org/).
 
+## Unreleased
+
+- Docs: rewrite both READMEs — one-paste install, one-time provider setup with
+  the reason it cannot be bundled, shorter prose, consistent structure.
+- Verified installing the published repo straight from the plugin manager:
+  `plugin_manager install_bundle target:github:Shad0wwa1ker/dsh-browser-mode`
+  resolves `1.5.1` and enables `preset-browser` and `browser-gate`.
+
 ## 1.5.1 — 2026-10-19
 
 - Fix `browser_access` failing with `content.some is not a function`: a tool's
