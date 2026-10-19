@@ -116,7 +116,7 @@ browser_source({ source: "builtin" })
 browser_source({ source: "endpoint", endpoint: "http://127.0.0.1:9222" })
 ```
 
-不带参数时只回显当前配置。切换会立刻重挂 provider，已经打开的浏览器会话需要重新调用浏览器工具。
+不带参数时只回显当前配置。切换会立刻重挂 provider：已经打开的浏览器会话里的工具会失效，请新开一个「浏览器操作」会话再打开页面。
 
 ### 手工改配置
 

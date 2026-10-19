@@ -10,6 +10,15 @@ All notable changes to this bundle. Versions follow [SemVer](https://semver.org/
   `plugin_manager install_bundle target:github:Shad0wwa1ker/dsh-browser-mode`
   resolves `1.5.1` and enables `preset-browser` and `browser-gate`.
 
+## 1.6.4 — 2026-10-19
+
+- Mount the provider before `apply` resolves. The provider attaches to the Agents
+  created after its hook is installed, so a session opened immediately after a
+  reload could come up without any `browser_*` tool.
+- Say plainly that switching the source invalidates the tools of already-open
+  browser sessions: open a new "浏览器操作" session before navigating, instead of
+  implying the same session recovers.
+
 ## 1.6.3 — 2026-10-19
 
 - A source chosen with `browser_source` now beats a hand-edited row config: the

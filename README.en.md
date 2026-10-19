@@ -116,7 +116,7 @@ browser_source({ source: "builtin" })
 browser_source({ source: "endpoint", endpoint: "http://127.0.0.1:9222" })
 ```
 
-With no arguments it only reports the current configuration. A switch remounts the provider immediately; sessions that already opened pages must call a browser tool again.
+With no arguments it only reports the current configuration. A switch remounts the provider immediately: the tools in sessions that already opened pages stop working, so open a new "Browser operation" session before navigating.
 
 ### Edit the configuration by hand
 

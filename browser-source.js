@@ -156,7 +156,7 @@ function describeResolved({ source, endpoint, executablePath }) {
   return edge ? `Microsoft Edge（${edge}）` : 'Microsoft Edge（未找到安装路径，改用 Playwright 内置 Chromium）'
 }
 
-export function apply(ctx, config) {
+export async function apply(ctx, config) {
   let fiber
   let queue = Promise.resolve()
 
@@ -194,7 +194,6 @@ export function apply(ctx, config) {
   }
 
   ctx.effect(() => {
-    void remount()
     const onChange = () => {
       void remount()
     }
@@ -206,6 +205,11 @@ export function apply(ctx, config) {
       void previous?.dispose()
     }
   })
+
+  // Mount before this plugin reports itself loaded: the provider only attaches to
+  // the Agents that appear after its `agent/created` hook is installed, so a
+  // session created right after a reload must not race the first mount.
+  await remount()
 
   ctx.tools.register({
     name: ACCESS_TOOL,
@@ -255,7 +259,7 @@ export function apply(ctx, config) {
         return `保存失败：${String(error?.message ?? error)}（配置文件：${statePath()}）`
       }
       await remount()
-      return `已切换浏览器来源为 ${describeResolved(next)}（配置：${JSON.stringify(next)}）。已打开的会话需要重新调用浏览器工具生效。`
+      return `已切换浏览器来源为 ${describeResolved(next)}（配置：${JSON.stringify(next)}）。请新开一个「浏览器操作」会话再打开页面：已打开会话里的浏览器工具会随着旧浏览器一起失效。`
     },
   })
 }

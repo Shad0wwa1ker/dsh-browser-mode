@@ -1,6 +1,6 @@
 {
   "name": "@local/dsh-browser-mode",
-  "version": "1.6.3",
+  "version": "1.6.4",
   "private": true,
   "type": "module",
   "description": "A DeepSeek Harness bundle: a visible-browser Agent preset, a runtime-switchable browser source (Edge / bundled Chromium / CDP endpoint), and a gate that keeps browser tools out of every other Session until the user agrees.",
